@@ -1,0 +1,6 @@
+services:
+  zookeeper:
+    image: zookeeper:3.9
+    container_name: homework-zookeeper
+    ports:
+      - "2181:2181"
