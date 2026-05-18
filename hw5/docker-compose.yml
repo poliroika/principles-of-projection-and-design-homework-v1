@@ -1,0 +1,54 @@
+services:
+  pact-postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: pact_broker
+      POSTGRES_USER: pact
+      POSTGRES_PASSWORD: pact
+    ports:
+      - "${PACT_POSTGRES_PORT:-5432}:5432"
+    profiles: ["pact"]
+
+  pact-broker:
+    image: pactfoundation/pact-broker:latest
+    depends_on:
+      - pact-postgres
+    ports:
+      - "${PACT_BROKER_PORT:-9292}:9292"
+    environment:
+      PACT_BROKER_DATABASE_ADAPTER: postgres
+      PACT_BROKER_DATABASE_HOST: pact-postgres
+      PACT_BROKER_DATABASE_NAME: pact_broker
+      PACT_BROKER_DATABASE_USERNAME: pact
+      PACT_BROKER_DATABASE_PASSWORD: pact
+      PACT_BROKER_DATABASE_CONNECT_MAX_RETRIES: "10"
+      PACT_BROKER_BASE_URL: http://localhost:${PACT_BROKER_PORT:-9292}
+    profiles: ["pact"]
+
+  zookeeper:
+    image: zookeeper:3.9
+    ports:
+      - "${ZOOKEEPER_PORT:-2181}:2181"
+    environment:
+      ZOO_4LW_COMMANDS_WHITELIST: mntr,ruok,conf
+
+  prometheus:
+    image: prom/prometheus:v2.55.1
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  grafana:
+    image: grafana/grafana:11.3.0
+    ports:
+      - "${GRAFANA_PORT:-3000}:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin}
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+    depends_on:
+      - prometheus

@@ -1,0 +1,30 @@
+services:
+  currency-rate-provider:
+    build:
+      context: ./currency-rate-provider
+    image: currency-rate-provider:${APP_VERSION:-local}
+    ports:
+      - "${PROVIDER_PORT:-8080}:8080"
+    environment:
+      SERVER_PORT: 8080
+      APP_VERSION: ${APP_VERSION:-local}
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
+      RATE_BASE_VALUE: ${RATE_BASE_VALUE:-92.0}
+      MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health,info,prometheus,metrics
+    stop_grace_period: 30s
+
+  rate-printer:
+    build:
+      context: ./rate-printer
+    image: rate-printer:${APP_VERSION:-local}
+    ports:
+      - "${PRINTER_PORT:-8081}:8081"
+    environment:
+      SERVER_PORT: 8081
+      APP_VERSION: ${APP_VERSION:-local}
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
+      RATE_PROVIDER_URL: http://currency-rate-provider:8080
+      MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health,info,prometheus,metrics
+    depends_on:
+      - currency-rate-provider
+    stop_grace_period: 30s
