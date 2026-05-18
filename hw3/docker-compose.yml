@@ -1,0 +1,26 @@
+services:
+  pact-postgres:
+    image: postgres:16-alpine
+    container_name: hw3-pact-postgres
+    environment:
+      POSTGRES_DB: pact_broker
+      POSTGRES_USER: pact
+      POSTGRES_PASSWORD: pact
+    ports:
+      - "5432:5432"
+
+  pact-broker:
+    image: pactfoundation/pact-broker:latest
+    container_name: hw3-pact-broker
+    depends_on:
+      - pact-postgres
+    ports:
+      - "9292:9292"
+    environment:
+      PACT_BROKER_DATABASE_ADAPTER: postgres
+      PACT_BROKER_DATABASE_HOST: pact-postgres
+      PACT_BROKER_DATABASE_NAME: pact_broker
+      PACT_BROKER_DATABASE_USERNAME: pact
+      PACT_BROKER_DATABASE_PASSWORD: pact
+      PACT_BROKER_DATABASE_CONNECT_MAX_RETRIES: "10"
+      PACT_BROKER_BASE_URL: http://localhost:9292
